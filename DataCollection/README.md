@@ -11,12 +11,15 @@ Each Python file: [docs/datacollection/](../docs/datacollection/overview.md).
 
 ## Setup
 
+This package is part of the Slitherbot uv workspace: one `.venv` and one `uv.lock` at the top
+level ([details](../docs/README.md#environment-one-uv-workspace)). From the `Slitherbot/` folder:
+
 ```bash
 uv sync --frozen
 ```
 
-`--frozen` installs the exact versions in `uv.lock`. The browser is your installed Google Chrome
-by default. To use Playwright's own Chromium instead, install it once and pass `--channel chromium`:
+`--frozen` installs the exact versions in `uv.lock`. The `datacollection` commands below work
+from any folder in the repo. The browser is your installed Google Chrome by default. To use Playwright's own Chromium instead, install it once and pass `--channel chromium`:
 
 ```bash
 uv run playwright install chromium
@@ -45,7 +48,7 @@ uv run datacollection collect --policy human --headed --episodes 5
 **outside** the window. Mouse movement steers the snake and would override your arrow keys.
 
 Stop any run with Ctrl+C; the current episode is saved. Data goes to `Slitherbot/data/raw`
-unless you pass `--out`. Run `uv run datacollection collect --help` for every option.
+unless you pass `--out` (a relative `--out` is relative to the folder you run from). Run `uv run datacollection collect --help` for every option.
 
 ## Check the data
 
@@ -60,4 +63,5 @@ uv run datacollection summarize --check-turns   # do heading changes match the r
 uv run pytest
 ```
 
-The tests need no browser or network.
+From `Slitherbot/` this runs every package's tests (listed in the top-level `pyproject.toml`);
+from `DataCollection/` only this package's. The tests need no browser or network.

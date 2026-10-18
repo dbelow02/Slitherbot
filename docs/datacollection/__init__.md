@@ -2,7 +2,7 @@
 
 **Job:** entry point for the `datacollection` command.
 
-`pyproject.toml` maps the command to `datacollection:main`:
+`DataCollection/pyproject.toml` maps the command to `datacollection:main`:
 
 ```toml
 [project.scripts]
@@ -13,4 +13,4 @@ datacollection = "datacollection:main"
 importing the package (for example, `from datacollection.storage import load_steps` in a
 training script) doesn't load Playwright or pandas.
 
-Run it with `uv run datacollection ...` from `DataCollection/`.
+Run it with `uv run datacollection ...` from anywhere in the repo.

@@ -29,10 +29,44 @@ policy → arrow-key actions, driven through Playwright.
 
 ## Quick start
 
+From the `Slitherbot/` folder:
+
 ```bash
-cd DataCollection
 uv sync --frozen
 uv run pytest
 uv run datacollection collect --policy mixed --minutes 30
 uv run datacollection summarize --check-turns
 ```
+
+## Environment: one uv workspace
+
+The repo is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/): every
+package (`DataCollection/` now, `DataProcessing/` and others later) shares **one** virtual
+environment and **one** lock file, both at the top level.
+
+| File | Role |
+| --- | --- |
+| `pyproject.toml` (top level) | Lists the member packages, the shared dev tools (pytest), and where the tests are |
+| `uv.lock` (top level) | Exact versions of every package, for all members together |
+| `.python-version` (top level) | Python 3.12 |
+| `.venv/` (top level) | The one environment. Point your editor's interpreter at `Slitherbot/.venv/bin/python` |
+| `<Package>/pyproject.toml` | That package's own name, dependencies and commands |
+
+`uv sync` installs every member as an editable package, so code changes apply without
+reinstalling. `uv run ...` works from any folder in the repo and always uses the top-level
+`.venv`.
+
+**Adding a package** (e.g. `DataProcessing`):
+
+1. Create it: `uv init --package --lib DataProcessing` (uv adds it to `members` for you), or
+   make the folder and its `pyproject.toml` by hand and add `"DataProcessing"` to `members` in
+   the top-level `pyproject.toml`.
+2. In the top-level `pyproject.toml`, add `"dataprocessing"` to `dependencies` and
+   `dataprocessing = { workspace = true }` to `[tool.uv.sources]`, so `uv sync` installs it.
+3. To use another member, list it in that package's own `dependencies` (e.g. `"datacollection"`)
+   and add the same `{ workspace = true }` line under its `[tool.uv.sources]`.
+4. Add its tests folder to `testpaths` in the top-level `pyproject.toml`.
+5. `uv sync`.
+
+**Adding a dependency** to one package: `uv add --package datacollection <name>`. Shared dev
+tools: `uv add --dev <name>` from the top level.

@@ -1,6 +1,8 @@
 # `tests/test_offline.py`
 
-**Job:** check the collector's logic without a browser or network. Run from `DataCollection/`:
+**Job:** check the collector's logic without a browser or network. Run from `Slitherbot/` (all
+packages' tests, as listed in the top-level `pyproject.toml`) or from `DataCollection/` (only
+this package's tests):
 
 ```bash
 uv run pytest

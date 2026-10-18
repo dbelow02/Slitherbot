@@ -1,0 +1,31 @@
+# Workspace root: one venv (.venv) and one lock file (uv.lock) for every package below.
+# Add a new package: create its folder with its own pyproject.toml, then add it to
+# `members`, `dependencies`, and `[tool.uv.sources]`, and run `uv sync`.
+
+[project]
+name = "slitherbot"
+version = "0.1.0"
+description = "A bot that learns to play slither.io"
+requires-python = ">=3.12"
+dependencies = [
+    "datacollection",
+]
+
+[tool.uv]
+package = false  # the root only gathers the packages; it isn't installed itself
+
+[tool.uv.workspace]
+members = [
+    "DataCollection",
+]
+
+[tool.uv.sources]
+datacollection = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["DataCollection/tests"]

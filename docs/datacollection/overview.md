@@ -39,7 +39,8 @@ Python is busy.
 
 The live game can't be replayed, but everything on our side is recorded:
 
-- **Dependencies:** `uv.lock` pins every package version; install with `uv sync --frozen`.
+- **Dependencies:** the top-level `uv.lock` pins every package version for the whole
+  workspace; install with `uv sync --frozen` from `Slitherbot/`.
 - **Settings:** `session.json` holds the full `CollectConfig`.
 - **Randomness:** `session.json` holds the session seed (drawn and saved if you don't pass
   `--seed`). Each `episode.json` holds that episode's own seed and the policy's settings, so a

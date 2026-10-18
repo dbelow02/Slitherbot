@@ -344,12 +344,13 @@ episodes.
 
 ## Suggested repo layout
 
-`DataCollection/` is a standalone uv project right now. Several stages need the same env code, so
-a **uv workspace** keeps them separate while sharing that code:
+The repo is already a **uv workspace** (one `.venv` and `uv.lock` at the top level; see
+[docs/README.md](README.md#environment-one-uv-workspace)). New stages are added as member
+packages next to `DataCollection/`. Target layout:
 
 ```
 Slitherbot/
-├── pyproject.toml            # [tool.uv.workspace] members = ["packages/*"]
+├── pyproject.toml            # workspace: members, shared dev tools; .venv and uv.lock live here too
 ├── packages/
 │   ├── slither_env/          # Playwright control, state reader, map renderer, arrow-key actions, gymnasium env  (Phase 1)
 │   ├── datacollection/       # policies, recorder, dataset tools (now: DataCollection/)                         (Phase 2)
