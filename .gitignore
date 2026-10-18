@@ -1,0 +1,33 @@
+# Collected data (game states, screenshots, test runs)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Training outputs (later phases)
+checkpoints/
+runs/
+wandb/
+*.pt
+*.ckpt
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
