@@ -12,7 +12,8 @@ Reads every `episode.json` under `root` and prints, per policy:
 | `episodes`, `steps`, `hours` | How much data |
 | `median_final_length`, `p90_final_length`, `max_length` | How well the policy played |
 | `bad_steps`, `bad_step_rate` | Flagged records ([flags](../data-format.md#flags)) |
-| `gz_mb`, `kb_per_step_gz` | Disk use |
+| `gz_mb`, `kb_per_step_gz` | Disk use of the state |
+| `frames`, `frames_mb` | Frames saved and their disk use |
 
 Then totals and a count of end reasons (`death`, `max_steps`, `stopped`, `error`).
 
@@ -37,8 +38,9 @@ It reports:
 | `sign_agreement` | above ~0.9 | Share of steps that turned the expected way |
 | `median_actual_over_expected` | ~0.8–1.0 | How much of the expected turn happened |
 
-In testing: sign agreement 0.89–0.97, ratio 0.81–0.97. Why the ratio sits a little under 1
-hasn't been pinned down. Agreement near 0.5 would mean the actions are paired with the wrong
-states.
+In testing: sign agreement 0.89–0.97 and ratio 0.81–0.97 before reads were moved into the
+game's own frame; 0.99 and 1.01 after. The earlier gap was most likely timing noise from
+reading between game frames. Agreement near 0.5 would mean the actions are paired with the
+wrong states.
 
 Run with `datacollection summarize --check-turns`.

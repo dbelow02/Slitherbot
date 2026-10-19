@@ -3,13 +3,25 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from typing import Any
 
-from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
+from playwright.async_api import Browser, BrowserContext, Page, Playwright, Route, async_playwright
 
 from datacollection.game_js import INIT_SCRIPT
 
 GAME_URL = "https://slither.io/"
+IMAGE_URL = re.compile(r"\.(png|jpe?g|gif|webp)(\?|$)", re.IGNORECASE)
+
+
+async def allow_cross_origin_image(route: Route) -> None:
+    """Add Access-Control-Allow-Origin to an image response, so the game canvas stays copyable.
+
+    Pairs with the image patch in game_js.py. Only changes what our own browser sees.
+    """
+    response = await route.fetch()
+    headers = {**response.headers, "access-control-allow-origin": "*"}
+    await route.fulfill(response=response, headers=headers)
 
 
 class SlitherBrowser:
@@ -43,6 +55,7 @@ class SlitherBrowser:
         assert self._browser is not None
         width, height = self.viewport
         self._context = await self._browser.new_context(viewport={"width": width, "height": height})
+        await self._context.route(IMAGE_URL, allow_cross_origin_image)
         await self._context.add_init_script(INIT_SCRIPT)
         self.page = await self._context.new_page()
         await self.page.goto(GAME_URL, wait_until="load")
@@ -60,8 +73,13 @@ class SlitherBrowser:
             await asyncio.sleep(0.25)
         raise TimeoutError("round did not start")
 
-    async def read_state(self) -> dict[str, Any]:
-        return await self._require_page().evaluate("window.__dc.read()")
+    async def read_state(self, frame_width: int = 0, frame_quality: float = 0.7) -> dict[str, Any]:
+        """State and (if ``frame_width`` > 0) a JPEG of the game canvas, from the same game frame.
+
+        The frame comes back as a ``data:image/jpeg;base64,...`` string in ``state["frame"]``.
+        """
+        return await self._require_page().evaluate(
+            "([w, q]) => window.__dc.read(w, q)", [frame_width, frame_quality])
 
     async def act(self, key: str | None, ms: float) -> float:
         """Hold an arrow key for ``ms`` milliseconds (runs in-page; returns immediately)."""

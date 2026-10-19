@@ -22,6 +22,8 @@ object is saved in `session.json`, so a run's settings are always known.
 | `viewport` | `(1280, 800)` | Browser size |
 | `nickname` | `""` | In-game name |
 | `seed` | `None` | Session seed. `None` → [`Collector`](recorder.md) draws one and saves it |
+| `frame_width` | 640 | Width of the game image saved with every step (height keeps the aspect; 400 at the default viewport); 0 = no frames |
+| `frame_quality` | 0.7 | JPEG quality of those images, 0–1 |
 | `screenshot_every_s` | 1.0 | Debug screenshot cadence (in memory); 0 = off |
 | `keep_screenshot_every_s` | 10.0 | How often one is saved to disk |
 | `screenshot_quality` | 60 | JPEG quality |

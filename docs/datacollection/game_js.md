@@ -13,7 +13,7 @@ game's variables when called, so it doesn't matter that they don't exist yet.
 
 | Function | What it does |
 | --- | --- |
-| `read()` | Returns the raw state (see [data-format.md](../data-format.md#state)). First releases any key the bot still holds (marking that action `forced`). Also returns, and clears: the timing of the bot's last action (`act`), real key events since the last read (`key_events`), and real mouse moves (`mouse_moves`) |
+| `read(frameWidth, frameQuality)` | Waits for the next game frame, then returns the raw state (see [data-format.md](../data-format.md#state)) and, if `frameWidth` > 0, a JPEG of the game canvas as a data URL (`frame`). First releases any key the bot still holds (marking that action `forced`). Also returns, and clears: the timing of the bot's last action (`act`), real key events since the last read (`key_events`), and real mouse moves (`mouse_moves`) |
 | `act(key, ms)` | Releases any held key, sends `keydown` for `ArrowLeft` / `ArrowRight`, and sets a timer to send `keyup` after `ms`. Records `t_call`, `t_down`, `t_up` with `performance.now()`. `key = null` or `ms ≤ 0` presses nothing |
 | `release()` | Sends `keyup` for a held key now and marks the action `forced` |
 | `ready()` | The Play button and nickname box exist |
@@ -21,6 +21,31 @@ game's variables when called, so it doesn't matter that they don't exist yet.
 | `inRound()` | A live round: `playing`, our snake exists and isn't dead, `dead_mtm == −1`, and the length tables are loaded |
 | `lastScore()` | Death-screen text, or `null` while `playing` is still true |
 | `clientInfo()` | Game script URL, protocol version, user agent, viewport |
+
+## How state and frame stay in sync
+
+The game's main loop (`oef`) updates the world, redraws the canvas (`window.mc`), and then
+schedules itself for the next display frame with `requestAnimationFrame`. `read()` schedules its
+own callback with `requestAnimationFrame`, so it runs in the next frame **right after** the
+game's update and redraw. In that callback, `snapshot()` reads every variable and then
+`captureFrame()` copies the canvas. JavaScript runs one thing at a time, so nothing can change
+between the two. The state's `t` is that moment.
+
+If animation frames are paused (a hidden or minimized window), a 100 ms timer reads anyway and
+sets `sync: "timeout"`, which the recorder flags.
+
+`captureFrame(width, quality)` draws `window.mc` scaled into a reusable canvas `width` px wide
+(height keeps the aspect ratio) and encodes it with `toDataURL('image/jpeg', quality)`: about
+8 ms at 640×400.
+
+## Why images are loaded as CORS requests
+
+The page ends up at `slither.com`, but the game's images come from `slither.io`, a different
+origin. Chrome marks a canvas as "tainted" once it has drawn such images, and then refuses to
+copy it. At the top of the script, the `src` setter of `HTMLImageElement` is patched to set
+`crossOrigin = "anonymous"` on every image (except data URLs) before loading. Together with the
+`Access-Control-Allow-Origin` header that [`browser.py`](browser.md) adds to image responses, the
+images count as allowed and the canvas stays copyable. This only changes our own browser.
 
 ## How it reads the game
 

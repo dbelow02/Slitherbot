@@ -61,13 +61,16 @@ def summarize(root: Path, check_turns: bool = False) -> None:
         max_length=("max_length", "max"),
         bad_steps=("bad_steps", "sum"),
         gz_mb=("gz_bytes", lambda s: s.sum() / 1e6),
+        frames=("n_frames", "sum"),
+        frames_mb=("frame_bytes", lambda s: s.sum() / 1e6),
     )
     by["bad_step_rate"] = by["bad_steps"] / by["steps"]
     by["kb_per_step_gz"] = by["gz_mb"] * 1000 / by["steps"]
     pd.set_option("display.width", 160)
     print(by.round(3).to_string())
     print(f"\nTotal: {len(df)} episodes, {int(df['n_steps'].sum())} steps, {df['hours'].sum():.2f} h, "
-          f"{df['gz_bytes'].sum() / 1e6:.1f} MB compressed")
+          f"{df['gz_bytes'].sum() / 1e6:.1f} MB of state (compressed), "
+          f"{int(df['n_frames'].sum())} frames, {df['frame_bytes'].sum() / 1e6:.1f} MB of frames")
     print("End reasons:", df["end_reason"].value_counts().to_dict())
 
     if check_turns:

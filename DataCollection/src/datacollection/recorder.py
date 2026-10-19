@@ -2,7 +2,8 @@
 
 One step ``k``:
 
-1. wait until ``t0 + k·Δ`` and read the state
+1. wait until ``t0 + k·Δ`` and read the state and the frame (an image of the game). Both come
+   from the same game frame; ``state["t"]`` is that moment on the page's clock
 2. complete the previous step's record with what happened since its read, and save it
 3. stop if our snake is dead (saving one ``terminal`` record)
 4. choose an action and start the key press (it runs in the page; we don't wait for it)
@@ -47,6 +48,10 @@ def is_alive(state: dict[str, Any]) -> bool:
 
 def step_flags(state: dict[str, Any], late_ms: float, cfg: CollectConfig) -> list[str]:
     flags = []
+    if state["sync"] != "raf":
+        flags.append("not_frame_synced")
+    if cfg.frame_width > 0 and state.get("frame_error"):
+        flags.append("no_frame")
     if late_ms > cfg.late_fraction * cfg.delta_ms:
         flags.append("late")
     if state["lagging"] or (state["lag_mult"] or 1) < 1:
@@ -58,22 +63,30 @@ def step_flags(state: dict[str, Any], late_ms: float, cfg: CollectConfig) -> lis
 
 def complete_record(record: dict[str, Any], interval: dict[str, Any], next_t: float,
                     human: HumanKeyTracker | None) -> None:
-    """Add what happened between ``record``'s read and the next read (at page time ``next_t``)."""
+    """Add what happened between ``record``'s read and the next read (at page time ``next_t``).
+
+    Key times are stored in ms after this step's frame, so it's explicit what was pressed between
+    frame k and frame k+1.
+    """
+    t_frame = record["state"]["t"]
     events = interval.get("key_events", [])
     mouse_moves = interval.get("mouse_moves", 0)
-    record["key_events"] = events
+    record["key_events"] = [[round(t - t_frame, 1), down, name] for t, down, name in events]
     record["mouse_moves"] = mouse_moves
     record["dt_next_ms"] = round(next_t - record["state"]["t"], 1)
     if mouse_moves:
         record["flags"].append("mouse_moved")
     if human is not None:
-        action, extra = human.action_for(events, record["state"]["t"], next_t)
+        action, extra = human.action_for(events, t_frame, next_t)
         record["action"] = {**action.to_json(), **extra}
         if extra["both_keys"]:
             record["flags"].append("both_keys")
     else:
         timing = interval.get("act")
         record["act_timing"] = timing
+        if timing and timing["t_down"] is not None:
+            record["action"]["start_ms"] = round(timing["t_down"] - t_frame, 1)
+            record["action"]["end_ms"] = round(timing["t_up"] - t_frame, 1) if timing["t_up"] else None
         if timing and timing["forced"]:
             record["flags"].append("forced_release")
         if events:
@@ -239,7 +252,8 @@ class Collector:
                 if slot > time.monotonic():
                     await asyncio.sleep(slot - time.monotonic())
                 late_ms = (time.monotonic() - slot) * 1000.0
-                state = await browser.read_state()
+                state = await browser.read_state(cfg.frame_width, cfg.frame_quality)
+                frame = state.pop("frame", None)
                 interval = {f: state.pop(f) for f in INTERVAL_FIELDS}
 
                 # 2. Complete and save the previous step.
@@ -254,7 +268,8 @@ class Collector:
                     if state["self"]:
                         writer.write({"step": k, "t_sched_ms": round(k * cfg.delta_ms, 1),
                                       "late_ms": round(late_ms, 1), "flags": ["terminal"],
-                                      "action": None, "state": state})
+                                      "action": None, "frame": writer.add_frame(k, frame) if frame else None,
+                                      "state": state})
                         summary["death_length"] = state["self"]["length"]
                     break
                 last_length = state["self"]["length"]
@@ -284,6 +299,7 @@ class Collector:
                     "flags": step_flags(state, late_ms, cfg),
                     "action": action.to_json(),
                     "decide_ms": round(decide_ms, 2),
+                    "frame": writer.add_frame(k, frame) if frame else None,
                     "state": state,
                 }
                 if action.ms < requested_ms:

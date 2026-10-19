@@ -1,7 +1,8 @@
 # DataCollection
 
 Plays slither.io on the public servers through Playwright and records the raw game state every
-Δ (default 200 ms), along with the arrow-key action taken after each read. Phase 2 of the
+Δ (default 200 ms), a 640-px image of the game from the same moment, and the arrow-key action
+taken after each read. Phase 2 of the
 [roadmap](../docs/roadmap.md).
 
 Run **one instance at a time**: the bot plays alongside real people.
@@ -46,6 +47,9 @@ uv run datacollection collect --policy human --headed --episodes 5
 
 **Human play:** click the game window once so it has keyboard focus, then move the mouse
 **outside** the window. Mouse movement steers the snake and would override your arrow keys.
+
+Frames: `--frame-width 320` for smaller images, `--frame-width 0` for none (~430 MB per hour at
+the default 640).
 
 Stop any run with Ctrl+C; the current episode is saved. Data goes to `Slitherbot/data/raw`
 unless you pass `--out` (a relative `--out` is relative to the folder you run from). Run `uv run datacollection collect --help` for every option.

@@ -16,14 +16,21 @@ async with SlitherBrowser(headless=True, channel="chrome", viewport=(1280, 800))
 | Method | What it does |
 | --- | --- |
 | `__aenter__` | Starts Playwright, launches the browser (`channel="chrome"` uses installed Google Chrome; `None` uses Playwright's Chromium), opens the page |
-| `open_page()` | Creates a fresh browser context with the fixed viewport, adds the init script (so `__dc` exists before the game's code runs), loads `https://slither.io/`, waits until the Play button exists. Also used to recover from errors |
+| `open_page()` | Creates a fresh browser context with the fixed viewport, routes image responses through `allow_cross_origin_image`, adds the init script (so `__dc` exists before the game's code runs), loads `https://slither.io/` (it redirects to `slither.com`), waits until the Play button exists. Also used to recover from errors |
 | `start_round(nickname)` | Calls the game's own Play-button handler (`play_btn.elem.onclick()`) until a live round is running (`__dc.inRound()`). The check ignores a dying snake, so it waits through the death animation. Times out after 45 s |
-| `read_state()` | `__dc.read()`: the raw state dict |
+| `read_state(frame_width, frame_quality)` | `__dc.read(...)`: the raw state dict, plus the frame as a JPEG data URL in `state["frame"]` when `frame_width` > 0. Both come from the same game frame |
 | `act(key, ms)` | `__dc.act(key, ms)`: presses the arrow key in the page and releases it after `ms` with a page timer. Returns immediately |
 | `release()` | Releases any key the bot holds |
 | `screenshot_jpeg(quality)` | Screenshot of the viewport as JPEG bytes |
 | `last_score()` | Death-screen text ("Your final length was N"). Waits up to 10 s for the round to fully end, so it never returns the previous round's text |
 | `client_info()` | Game script URL, protocol version, user agent, viewport, browser version |
+
+## `allow_cross_origin_image(route)`
+
+Playwright route handler for image URLs (`.png`, `.jpg`, `.gif`, `.webp`). It fetches the image
+and passes it on with an added `Access-Control-Allow-Origin: *` header. With the image patch in
+[`game_js.py`](game_js.md#why-images-are-loaded-as-cors-requests), this keeps the game canvas
+copyable for frames. Only images are routed; the game's WebSocket and scripts are untouched.
 
 ## Notes
 

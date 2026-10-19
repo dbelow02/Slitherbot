@@ -11,7 +11,8 @@ client's code and testing it (checked 2026-10-18).
 | Server | Public slither.io servers, through the real game client | Decided |
 | Instances | One bot at a time (it plays alongside real people) | Decided |
 | Observation source | Game state read from the page's JavaScript every Δ, not screenshots | Decided |
-| Screenshots | Debugging only: one saved about every 10 s, plus one just before each death | Decided |
+| Frames | A 640-px image of the game saved with every step, from the same game frame as the state | Decided |
+| Screenshots | Full-page debug screenshots: one about every 10 s, plus one just before each death | Decided |
 | What is saved | Everything the client holds about snakes, food and prey, unfiltered | Decided |
 | Step interval Δ | 200 ms | Starting value; may drop to 100 ms |
 | Action | `(key, ms)`: hold Left, Right, or nothing for `ms` ≤ Δ | Decided; boost later |
@@ -45,11 +46,31 @@ Everything the game draws comes from JavaScript variables the page holds:
 Reading that state instead of screenshots:
 
 - loses nothing, because the picture is drawn from it
-- is exact (no vision errors) and fast (one call, a few ms, vs. tens of ms for a screenshot)
+- is exact (no vision errors) and fast (one call, a few ms)
 - lets us draw our own model input at a fixed scale (the game zooms out as you grow)
 
-Screenshots are still taken for **debugging**: checking that our drawing of the state matches
-the game, and seeing what happened just before a death.
+### Frames with every step
+
+The game state is the main data, but a picture of the game is saved with every step too, in case
+image-based models are tried later and to check that our drawings of the state match the game.
+
+- **Same moment as the state.** The reader runs right after the game's own update and redraw
+  in a display frame, reads the state, and copies the canvas in the same go. A live check
+  confirmed saved positions land on the drawn objects. Details in
+  [data-format.md](data-format.md#frames-and-synchronization).
+- **Game only.** The copy is of the game canvas, without the leaderboard and score text, so an
+  image model can't read the score off the screen.
+- **640 px wide** by default (`--frame-width` changes it; 0 turns frames off), JPEG quality 0.7:
+  ~24 KB per frame, ~430 MB per hour of play, ~9 GB for 20 hours.
+- **One `frames.tar` per episode**, not thousands of loose files.
+- **Copying the canvas needed a fix.** The page is served from `slither.com` but its images
+  come from `slither.io`, and Chrome blocks copying a canvas that has drawn images from another
+  origin. The collector loads images as CORS requests and adds an
+  `Access-Control-Allow-Origin` header to image responses in its own browser. Nothing changes
+  for the server or other players.
+
+Full-page debug screenshots are still taken occasionally (about every 10 s, and the last one
+before each death), for looking at what happened.
 
 ### Save everything the client holds
 
@@ -156,7 +177,8 @@ forward, divided by a fixed radius `R` (about what a player can see). Angles as 
 | Prey | relative x, y; `sz`; heading; speed |
 
 Leave out: absolute world position (the border features cover it), our absolute heading, zoom
-`gsc`, rank and leaderboard, names and skins, lag values (they're for flagging), raw snake ids.
+`gsc`, rank and leaderboard, names and skins, lag values (they're for flagging), raw snake ids,
+and **body points marked `dying`** (fading old tail positions, not part of the solid body).
 
 ### Encoder options
 

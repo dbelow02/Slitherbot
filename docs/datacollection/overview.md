@@ -25,9 +25,10 @@ cli.py ──CollectConfig──▶ recorder.Collector
                               │  per episode: picks a policy (policies.py), opens an EpisodeWriter (storage.py)
                               │  per step:
                               ├─▶ browser.read_state() ──▶ page: __dc.read()      (game_js.py)
+                              │      state + frame from the same game frame
                               ├─▶ policy.act(state)
                               ├─▶ browser.act(key, ms) ──▶ page: __dc.act()       (game_js.py)
-                              └─▶ EpisodeWriter.write(record)
+                              └─▶ EpisodeWriter.add_frame(...) + write(record)
 summarize.py ◀── storage.load_steps / episode_dirs ◀── data/raw/...
 ```
 

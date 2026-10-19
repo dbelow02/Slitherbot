@@ -25,6 +25,8 @@ class CollectConfig:
     viewport: tuple[int, int] = (1280, 800)
     nickname: str = ""
     seed: int | None = None  # None: a seed is drawn and saved, so the run can still be replayed
+    frame_width: int = 640  # width of the per-step game frame in px (height keeps the aspect); 0 = off
+    frame_quality: float = 0.7  # JPEG quality of per-step frames, 0-1
     screenshot_every_s: float = 1.0  # debug screenshot cadence (kept in memory); 0 = off
     keep_screenshot_every_s: float = 10.0  # how often one of those is saved to disk
     screenshot_quality: int = 60  # JPEG quality

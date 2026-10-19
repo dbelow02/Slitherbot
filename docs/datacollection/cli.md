@@ -22,6 +22,8 @@ collection or the summary.
 | `--viewport` | `1280x800` | Browser size; affects how far the client sees |
 | `--nickname` | empty | Name shown in game |
 | `--seed` | drawn | Session seed; saved in `session.json` either way |
+| `--frame-width` | 640 | Width in px of the game image saved with every step (0 = none) |
+| `--frame-quality` | 0.7 | JPEG quality of those images, 0–1 |
 | `--screenshot-every` | 1.0 | Seconds between debug screenshots kept in memory (0 = off) |
 | `--keep-screenshot-every` | 10.0 | Seconds between screenshots saved to disk |
 | `--out` | `Slitherbot/data/raw` | Output folder |

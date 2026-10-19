@@ -15,10 +15,11 @@ uv run pytest
 | `test_turn_rate_matches_measured_small_snake` | `turn_rate` gives 4.125 rad/s for a new snake (~4 measured in the game) |
 | `test_human_key_tracker_splits_holds_across_steps` | Key holds that cross step boundaries are split correctly; both-keys steps are flagged |
 | `test_is_alive_uses_dead_flag_not_just_playing` | A dead snake counts as dead even while `playing` is true |
-| `test_step_flags` | `late`, `lag`, `disconnected` flags |
-| `test_complete_record_flags_forced_release_and_interference` | Records get `forced_release`, `human_interference`, and `dt_next_ms` |
+| `test_step_flags` | `late`, `lag`, `disconnected`, `not_frame_synced`, `no_frame` flags |
+| `test_complete_record_flags_forced_release_and_interference` | Records get `forced_release`, `human_interference`, `dt_next_ms`, and key times relative to the step's frame |
 | `test_parse_final_length` | Death-screen text parsing, including thousands separators |
 | `test_episode_writer_round_trip` | Records written and gzipped are read back the same; `episode.json` has `n_steps` |
+| `test_frames_round_trip` | Frames written to `frames.tar` are read back byte-for-byte, under the names the records use |
 
 The helpers `snake(...)` and `game_state(...)` build minimal fake states with the same fields as
 the real ones.

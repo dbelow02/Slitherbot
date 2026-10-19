@@ -52,6 +52,10 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--viewport", type=parse_viewport, default=defaults.viewport, help="browser viewport, WxH")
     c.add_argument("--nickname", default=defaults.nickname, help="name shown in game")
     c.add_argument("--seed", type=int, help="random seed (default: drawn and saved in session.json)")
+    c.add_argument("--frame-width", type=int, default=defaults.frame_width,
+                   help="width in px of the game image saved with every step (height keeps the aspect; 0 = none)")
+    c.add_argument("--frame-quality", type=float, default=defaults.frame_quality,
+                   help="JPEG quality of those images, 0-1")
     c.add_argument("--screenshot-every", type=float, default=defaults.screenshot_every_s,
                    help="seconds between debug screenshots held in memory (0 = none)")
     c.add_argument("--keep-screenshot-every", type=float, default=defaults.keep_screenshot_every_s,
@@ -86,6 +90,8 @@ def main(argv: list[str] | None = None) -> None:
         viewport=args.viewport,
         nickname=args.nickname,
         seed=args.seed,
+        frame_width=args.frame_width,
+        frame_quality=args.frame_quality,
         screenshot_every_s=args.screenshot_every,
         keep_screenshot_every_s=args.keep_screenshot_every,
     )

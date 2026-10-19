@@ -8,6 +8,19 @@ Every slither.io global name used by this project lives in this file.
 INIT_SCRIPT = r"""
 (() => {
   if (window.__dc) return;
+
+  // The game's images come from a different origin than the page (slither.io vs slither.com),
+  // which "taints" the canvas and blocks copying frames from it. Load every image as a CORS
+  // request; browser.py adds the matching Access-Control-Allow-Origin header to image responses.
+  const srcProp = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  Object.defineProperty(HTMLImageElement.prototype, 'src', {
+    configurable: true, enumerable: srcProp.enumerable,
+    get() { return srcProp.get.call(this); },
+    set(v) {
+      if (this.crossOrigin === null && typeof v === 'string' && !v.startsWith('data:')) this.crossOrigin = 'anonymous';
+      srcProp.set.call(this, v);
+    },
+  });
   const R1 = v => (typeof v === 'number' && isFinite(v)) ? Math.round(v * 10) / 10 : null;
   const R3 = v => (typeof v === 'number' && isFinite(v)) ? Math.round(v * 1000) / 1000 : null;
   const KEY_CODES = {ArrowLeft: 37, ArrowRight: 39, ArrowUp: 38};
@@ -100,12 +113,45 @@ INIT_SCRIPT = r"""
     return floor ? Math.floor(v) : R3(v);
   }
 
-  dc.read = function () {
+  // Copy the game canvas (window.mc) into a JPEG data URL, `width` px wide, same aspect ratio.
+  function captureFrame(width, quality) {
+    const mc = window.mc;
+    if (!(width > 0) || !mc || !mc.width) return {frame: null, frame_error: width > 0 ? 'no canvas' : null};
+    const height = Math.round(width * mc.height / mc.width);
+    if (!dc.frameCanvas) dc.frameCanvas = document.createElement('canvas');
+    const fc = dc.frameCanvas;
+    if (fc.width !== width || fc.height !== height) { fc.width = width; fc.height = height; }
+    try {
+      fc.getContext('2d').drawImage(mc, 0, 0, width, height);
+      return {frame: fc.toDataURL('image/jpeg', quality), frame_error: null};
+    } catch (e) {
+      return {frame: null, frame_error: String(e)};
+    }
+  }
+
+  // State and frame from the same game frame. The game's loop (oef) updates the world, redraws
+  // the canvas, then schedules itself with requestAnimationFrame. A callback we schedule now runs
+  // in the next frame right after the game's own, so the state we read is exactly what was just
+  // drawn. If animation frames are paused (hidden tab), fall back after 100 ms and say so.
+  dc.read = function (frameWidth, frameQuality) {
+    return new Promise(resolve => {
+      let done = false;
+      const run = sync => {
+        if (done) return;
+        done = true;
+        resolve(snapshot(sync, frameWidth, frameQuality));
+      };
+      requestAnimationFrame(() => run('raf'));
+      setTimeout(() => run('timeout'), 100);
+    });
+  };
+
+  function snapshot(sync, frameWidth, frameQuality) {
     dc.release();
     const act = dc.lastAct;
     dc.lastAct = null;
     const s = {
-      t: performance.now(), wall: Date.now(),
+      t: performance.now(), wall: Date.now(), sync: sync, game_fr: R3(window.fr),
       playing: !!window.playing, connected: !!window.connected,
       dead_mtm: window.dead_mtm,
       grd: window.grd, view_x: R1(window.view_xx), view_y: R1(window.view_yy),
@@ -148,8 +194,11 @@ INIT_SCRIPT = r"""
       if (p) s.preys.push({id: p.id, x: R1(p.xx), y: R1(p.yy), sz: R3(p.sz), ang: R3(p.ang),
                            wang: R3(p.wang), sp: R3(p.sp), dir: p.dir, eaten: p.eaten ? 1 : 0});
     }
+    const t0 = performance.now();
+    Object.assign(s, captureFrame(frameWidth, frameQuality));
+    s.frame_ms = R3(performance.now() - t0);
     return s;
-  };
+  }
 
   dc.ready = function () {
     return !!(window.play_btn && window.play_btn.elem && window.nick);
